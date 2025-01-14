@@ -21,6 +21,11 @@ public class GatewayConfiguration {
                         .filters(filter -> filter.filter(jwtAuthenticationFilter))
                         .uri("lb://USER-SERVICE"))
 
+                .route("transaction-service", route -> route
+                        .path("/v1/transaction-service/**")
+                        .filters(filter -> filter.filter(jwtAuthenticationFilter))
+                        .uri("lb://TRANSACTION-SERVICE"))
+
                 .route("authentication-service", route -> route
                         .path("/v1/authentication-service/**")
                         .uri("lb://AUTHENTICATION-SERVICE"))

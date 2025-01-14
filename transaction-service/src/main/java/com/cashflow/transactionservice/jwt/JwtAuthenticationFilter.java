@@ -1,13 +1,12 @@
-package com.cashflow.userservice.jwt;
+package com.cashflow.transactionservice.jwt;
 
-import com.cashflow.userservice.exceptions.InvalidTokenException;
+import com.cashflow.transactionservice.exceptions.InvalidTokenException;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.MalformedJwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -29,12 +28,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
-        String requestURI = request.getRequestURI();
-        if (requestURI.startsWith("/v1/user-service/getUserByEmail/") || requestURI.startsWith("/v1/user-service/create")) {
-            filterChain.doFilter(request, response);
-            return;
-        }
-
         try {
             String authHeader = request.getHeader("Authorization");
             if (authHeader != null && authHeader.startsWith("Bearer ")) {
