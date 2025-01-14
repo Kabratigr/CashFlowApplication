@@ -1,5 +1,6 @@
 package com.cashflow.authenticationservice.service;
 
+import com.cashflow.authenticationservice.enums.UserRole;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
@@ -16,20 +17,18 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class JwtService {
 
-    private final CustomUserDetailsService userDetailsService;
-
     @Value("${jwt.secret}")
     private String secretKey;
 
-    public String generateToken(String email) {
+    public String generateToken(Long userId, UserRole userRole) {
         Map<String, Object> claims = new HashMap<>();
+        claims.put("userId", userId);
+        claims.put("userRole", userRole);
         return Jwts.builder()
                 .claims()
                 .add(claims)
-                .subject(email)
                 .issuedAt(new Date(System.currentTimeMillis()))
                 .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60))
-                .issuer(userDetailsService.loadUserByUsername(email).getAuthorities().iterator().next().getAuthority())
                 .and()
                 .signWith(generateSignKey())
                 .compact();

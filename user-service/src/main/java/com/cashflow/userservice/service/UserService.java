@@ -10,6 +10,7 @@ import com.cashflow.userservice.repository.UserRepository;
 import com.cashflow.userservice.requests.UserRegistrationRequest;
 import com.cashflow.userservice.requests.UserUpdateProfileRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -36,13 +37,7 @@ public class UserService {
         userRepository.save(userToCreate);
     }
 
-    public UserDto getUserByUsername(String username) {
-        return convertUserToUserDto(userRepository.findUserByUsername(username)
-                .orElseThrow(() -> new UserNotFoundException(
-                        String.format("User with username \"%s\" not found", username))));
-    }
-
-    protected UserDto convertUserToUserDto(User userEntity) {
+    public UserDto convertUserToUserDto(User userEntity) {
         return UserDto.builder()
                 .id(userEntity.getId())
                 .username(userEntity.getUsername())
@@ -69,18 +64,16 @@ public class UserService {
                 .build();
     }
 
-    public void updateUserProfile(UserUpdateProfileRequest userUpdateProfileRequest) {
-        User userToUpdate = findUserById(userUpdateProfileRequest.getId());
+    public void updateUserProfile(UserUpdateProfileRequest userUpdateProfileRequest, User userToUpdate) {
         userToUpdate.setEmail(Optional.ofNullable(userUpdateProfileRequest.getEmail()).orElse(userToUpdate.getEmail()));
         userToUpdate.setUsername(Optional.ofNullable(userUpdateProfileRequest.getUsername()).orElse(userToUpdate.getUsername()));
-        userToUpdate.setPassword(userUpdateProfileRequest.getPassword() != null ? passwordEncoder.encode(userToUpdate.getPassword()) : userToUpdate.getPassword());
+        userToUpdate.setPassword(userUpdateProfileRequest.getPassword() != null ? passwordEncoder.encode(userUpdateProfileRequest.getPassword()) : userToUpdate.getPassword());
         userToUpdate.setFirstName(Optional.ofNullable(userUpdateProfileRequest.getFirstName()).orElse(userToUpdate.getFirstName()));
         userToUpdate.setLastName(Optional.ofNullable(userUpdateProfileRequest.getLastName()).orElse(userToUpdate.getLastName()));
         userRepository.save(userToUpdate);
     }
 
-    public void deleteUserById(Long id) {
-        User userToDelete = findUserById(id);
+    public void deleteUserById(User userToDelete) {
         userRepository.delete(userToDelete);
     }
 
@@ -88,5 +81,9 @@ public class UserService {
         return userRepository.findUserById(id)
                 .orElseThrow(() -> new UserNotFoundException(
                         String.format("User with id \"%s\" not found", id)));
+    }
+
+    public Long getCurrentUserId() {
+        return Long.valueOf(SecurityContextHolder.getContext().getAuthentication().getName());
     }
 }

@@ -21,6 +21,7 @@
         <module>api-gateway</module>
         <module>user-service</module>
         <module>authentication-service</module>
+        <module>transaction-service</module>
     </modules>
 
     <properties>

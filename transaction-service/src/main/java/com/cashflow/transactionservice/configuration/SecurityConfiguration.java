@@ -1,6 +1,6 @@
-package com.cashflow.userservice.configuration;
+package com.cashflow.transactionservice.configuration;
 
-import com.cashflow.userservice.jwt.JwtAuthenticationFilter;
+import com.cashflow.transactionservice.jwt.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

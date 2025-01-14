@@ -2,6 +2,7 @@ package com.cashflow.userservice.controller;
 
 import com.cashflow.userservice.dto.AuthenticationUserDto;
 import com.cashflow.userservice.dto.UserDto;
+import com.cashflow.userservice.model.User;
 import com.cashflow.userservice.requests.UserRegistrationRequest;
 import com.cashflow.userservice.requests.UserUpdateProfileRequest;
 import com.cashflow.userservice.service.UserService;
@@ -9,7 +10,6 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -28,7 +28,7 @@ public class UserController {
     public void createUser(@Valid @RequestBody UserRegistrationRequest userRegistrationRequest,
                            @RequestHeader("Internal-Key") String key) {
         if (!key.equals(internalKey)) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Access denied");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
         userService.createUser(userRegistrationRequest);
     }
@@ -38,28 +38,38 @@ public class UserController {
     public AuthenticationUserDto getAuthenticationUserByEmail(@PathVariable String email,
                                                               @RequestHeader("Internal-Key") String key) {
         if (!key.equals(internalKey)) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Access denied");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
         return userService.getAuthenticationUserByEmail(email);
     }
 
-    @GetMapping("/view/{username}")
+    @GetMapping("/view/{id}")
     @ResponseStatus(HttpStatus.OK)
-    public UserDto viewUserProfile(@PathVariable String username) {
-        return userService.getUserByUsername(username);
+    public UserDto viewUserProfile(@PathVariable Long id) {
+        User user = userService.findUserById(id);
+        if (!user.getId().equals(userService.getCurrentUserId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
+        return userService.convertUserToUserDto(user);
     }
 
     @PutMapping("/update")
     @ResponseStatus(HttpStatus.OK)
-    @PreAuthorize("@userService.findUserById(#userUpdateProfileRequest.id).email == principal")
     public void updateProfile(@Valid @RequestBody UserUpdateProfileRequest userUpdateProfileRequest) {
-        userService.updateUserProfile(userUpdateProfileRequest);
+        User user = userService.findUserById(userUpdateProfileRequest.getId());
+        if (!user.getId().equals(userService.getCurrentUserId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
+        userService.updateUserProfile(userUpdateProfileRequest, user);
     }
 
     @DeleteMapping("/delete/{id}")
     @ResponseStatus(HttpStatus.OK)
-    @PreAuthorize("hasRole('ROLE_ADMIN') or @userService.findUserById(#id).email == principal")
     public void deleteUser(@PathVariable Long id) {
-        userService.deleteUserById(id);
+        User user = userService.findUserById(id);
+        if (!user.getId().equals(userService.getCurrentUserId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
+        userService.deleteUserById(user);
     }
 }
