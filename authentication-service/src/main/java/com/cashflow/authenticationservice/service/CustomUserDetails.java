@@ -1,6 +1,6 @@
 package com.cashflow.authenticationservice.service;
 
-import com.cashflow.authenticationservice.dto.AuthenticationUserDto;
+import com.cashflow.authenticationservice.dto.UserDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -13,23 +13,23 @@ import java.util.stream.Stream;
 @RequiredArgsConstructor
 public class CustomUserDetails implements UserDetails {
 
-    private final AuthenticationUserDto authenticationUserDto;
+    private final UserDto userDto;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return Stream.of(authenticationUserDto.getUserRole())
+        return Stream.of(userDto.getUserRole())
                 .map(userRole -> new SimpleGrantedAuthority(userRole.name()))
                 .collect(Collectors.toList());
     }
 
     @Override
     public String getPassword() {
-        return authenticationUserDto.getPassword();
+        return userDto.getPassword();
     }
 
     @Override
     public String getUsername() {
-        return authenticationUserDto.getUsername();
+        return userDto.getUsername();
     }
 
     @Override

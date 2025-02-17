@@ -1,17 +1,17 @@
 package com.cashflow.userservice.dto;
 
-import com.cashflow.userservice.enums.UserRole;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 @Builder
-public class UserDto {
+@AllArgsConstructor
+@NoArgsConstructor
+public class UserProfileDto {
     private Long id;
-    private UserRole userRole;
-    private String email;
     private String username;
-    private String password;
     private String firstName;
     private String lastName;
 }

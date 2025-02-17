@@ -1,7 +1,7 @@
 package com.cashflow.authenticationservice.service;
 
 import com.cashflow.authenticationservice.client.UserServiceClient;
-import com.cashflow.authenticationservice.dto.AuthenticationUserDto;
+import com.cashflow.authenticationservice.dto.UserDto;
 import com.cashflow.authenticationservice.dto.TokenDto;
 import com.cashflow.authenticationservice.exceptions.WrongCredentialsException;
 import com.cashflow.authenticationservice.requests.UserLoginRequest;
@@ -30,7 +30,7 @@ public class AuthenticationService {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(userLoginRequest.getEmail(), userLoginRequest.getPassword()));
         if (authentication.isAuthenticated()) {
-            AuthenticationUserDto userDto = userServiceClient.getAuthenticationUserByEmail(userLoginRequest.getEmail());
+            UserDto userDto = userServiceClient.getUserDtoByEmail(userLoginRequest.getEmail());
             return TokenDto.builder()
                     .token(jwtService.generateToken(userDto.getId(), userDto.getUserRole()))
                     .build();

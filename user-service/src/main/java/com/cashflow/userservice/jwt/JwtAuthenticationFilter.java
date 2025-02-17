@@ -7,7 +7,6 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -30,7 +29,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
         String requestURI = request.getRequestURI();
-        if (requestURI.startsWith("/v1/user-service/getUserByEmail/") || requestURI.startsWith("/v1/user-service/create")) {
+        if (requestURI.startsWith("/v1/user-service/getUserByEmail/") ||
+                requestURI.startsWith("/v1/user-service/create") ||
+                requestURI.startsWith("/v1/user-service/getCustomerId") ||
+                requestURI.startsWith("/v1/user-service/updateCustomerId/")) {
             filterChain.doFilter(request, response);
             return;
         }

@@ -18,4 +18,5 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
     @Query("SELECT new com.cashflow.transactionservice.dto.TransactionDto(t.title, t.amount, t.category, t.createdAt) " +
             "FROM Transaction t WHERE t.userId = :userId")
     List<TransactionDto> findAllByUserIdAsDtoSorted(@Param("userId") Long userId, Sort sort);
+    void deleteAllByUserId(Long userId);
 }

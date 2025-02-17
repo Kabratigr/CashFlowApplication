@@ -1,18 +1,22 @@
 package com.cashflow.userservice.service;
 
-import com.cashflow.userservice.dto.AuthenticationUserDto;
+import com.cashflow.userservice.client.TransactionServiceClient;
+import com.cashflow.userservice.dto.UserCustomerIdDto;
 import com.cashflow.userservice.dto.UserDto;
+import com.cashflow.userservice.dto.UserProfileDto;
 import com.cashflow.userservice.enums.UserRole;
 import com.cashflow.userservice.enums.UserStatus;
 import com.cashflow.userservice.exceptions.UserNotFoundException;
 import com.cashflow.userservice.model.User;
 import com.cashflow.userservice.repository.UserRepository;
 import com.cashflow.userservice.requests.UserRegistrationRequest;
+import com.cashflow.userservice.requests.UserUpdateCustomerIdRequest;
 import com.cashflow.userservice.requests.UserUpdateProfileRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
@@ -23,6 +27,8 @@ public class UserService {
     private final UserRepository userRepository;
 
     private final PasswordEncoder passwordEncoder;
+
+    private final TransactionServiceClient transactionServiceClient;
 
     public void createUser(UserRegistrationRequest userRegistrationRequest) {
         User userToCreate = User.builder()
@@ -37,8 +43,8 @@ public class UserService {
         userRepository.save(userToCreate);
     }
 
-    public UserDto convertUserToUserDto(User userEntity) {
-        return UserDto.builder()
+    public UserProfileDto convertUserToUserProfileDto(User userEntity) {
+        return UserProfileDto.builder()
                 .id(userEntity.getId())
                 .username(userEntity.getUsername())
                 .firstName(userEntity.getFirstName())
@@ -46,14 +52,14 @@ public class UserService {
                 .build();
     }
 
-    public AuthenticationUserDto getAuthenticationUserByEmail(String email) {
-        return convertUserToAuthenticationUserDto(userRepository.findUserByEmail(email)
+    public UserDto getUserDtoByEmail(String email) {
+        return convertUserToUserDto(userRepository.findUserByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException(
                         String.format("User with email \"%s\" not found", email))));
     }
 
-    protected AuthenticationUserDto convertUserToAuthenticationUserDto(User userEntity) {
-        return AuthenticationUserDto.builder()
+    protected UserDto convertUserToUserDto(User userEntity) {
+        return UserDto.builder()
                 .id(userEntity.getId())
                 .userRole(userEntity.getRole())
                 .email(userEntity.getEmail())
@@ -73,7 +79,32 @@ public class UserService {
         userRepository.save(userToUpdate);
     }
 
+    public void updateCustomerId (UserUpdateCustomerIdRequest userUpdateCustomerIdRequest, Long id) {
+        User userToUpdate = userRepository.findUserById(id)
+                .orElseThrow(() -> new UserNotFoundException(
+                        String.format("User with id \"%s\" not found", id)));
+        userToUpdate.setCustomerId(userUpdateCustomerIdRequest.getCustomerId());
+        userRepository.save(userToUpdate);
+    }
+
+    public UserCustomerIdDto getUserCustomerIdDtoById(Long id) {
+        return convertUserToUserCustomerIdDto(userRepository.findUserById(id)
+                .orElseThrow(() -> new UserNotFoundException(
+                        String.format("User with id \"%s\" not found", id))));
+    }
+
+    protected UserCustomerIdDto convertUserToUserCustomerIdDto(User userEntity) {
+        return UserCustomerIdDto.builder()
+                .customerId(userEntity.getCustomerId())
+                .build();
+    }
+
+    @Transactional
     public void deleteUserById(User userToDelete) {
+        if (userToDelete.getCustomerId() != null && !userToDelete.getCustomerId().isEmpty()) {
+            transactionServiceClient.deleteSaltEdgeUser(userToDelete.getCustomerId());
+        }
+        transactionServiceClient.deleteAllTransactions(getCurrentUserId());
         userRepository.delete(userToDelete);
     }
 

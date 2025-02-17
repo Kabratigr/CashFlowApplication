@@ -1,9 +1,11 @@
 package com.cashflow.userservice.controller;
 
-import com.cashflow.userservice.dto.AuthenticationUserDto;
+import com.cashflow.userservice.dto.UserCustomerIdDto;
 import com.cashflow.userservice.dto.UserDto;
+import com.cashflow.userservice.dto.UserProfileDto;
 import com.cashflow.userservice.model.User;
 import com.cashflow.userservice.requests.UserRegistrationRequest;
+import com.cashflow.userservice.requests.UserUpdateCustomerIdRequest;
 import com.cashflow.userservice.requests.UserUpdateProfileRequest;
 import com.cashflow.userservice.service.UserService;
 import jakarta.validation.Valid;
@@ -35,22 +37,22 @@ public class UserController {
 
     @GetMapping("/getUserByEmail/{email}")
     @ResponseStatus(HttpStatus.OK)
-    public AuthenticationUserDto getAuthenticationUserByEmail(@PathVariable String email,
-                                                              @RequestHeader("Internal-Key") String key) {
+    public UserDto getUserDtoByEmail(@PathVariable String email,
+                                     @RequestHeader("Internal-Key") String key) {
         if (!key.equals(internalKey)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
-        return userService.getAuthenticationUserByEmail(email);
+        return userService.getUserDtoByEmail(email);
     }
 
     @GetMapping("/view/{id}")
     @ResponseStatus(HttpStatus.OK)
-    public UserDto viewUserProfile(@PathVariable Long id) {
+    public UserProfileDto viewUserProfile(@PathVariable Long id) {
         User user = userService.findUserById(id);
         if (!user.getId().equals(userService.getCurrentUserId())) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
-        return userService.convertUserToUserDto(user);
+        return userService.convertUserToUserProfileDto(user);
     }
 
     @PutMapping("/update")
@@ -61,6 +63,27 @@ public class UserController {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
         userService.updateUserProfile(userUpdateProfileRequest, user);
+    }
+
+    @PutMapping("/updateCustomerId/{id}")
+    @ResponseStatus(HttpStatus.OK)
+    public void updateCustomerId(@PathVariable Long id,
+                                 @RequestBody UserUpdateCustomerIdRequest userUpdateCustomerIdRequest,
+                                 @RequestHeader("Internal-Key") String key) {
+        if (!key.equals(internalKey)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
+        userService.updateCustomerId(userUpdateCustomerIdRequest, id);
+    }
+
+    @GetMapping("/getCustomerId/{id}")
+    @ResponseStatus(HttpStatus.OK)
+    public UserCustomerIdDto getUserCustomerIdById(@PathVariable Long id,
+                                                   @RequestHeader("Internal-Key") String key) {
+        if (!key.equals(internalKey)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
+        return userService.getUserCustomerIdDtoById(id);
     }
 
     @DeleteMapping("/delete/{id}")

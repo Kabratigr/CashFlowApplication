@@ -1,6 +1,6 @@
 package com.cashflow.authenticationservice.client;
 
-import com.cashflow.authenticationservice.dto.AuthenticationUserDto;
+import com.cashflow.authenticationservice.dto.UserDto;
 import com.cashflow.authenticationservice.requests.UserRegistrationRequest;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -15,5 +15,5 @@ public interface UserServiceClient {
     void createUser(@RequestBody UserRegistrationRequest userRegistrationRequest);
 
     @GetMapping("/getUserByEmail/{email}")
-    AuthenticationUserDto getAuthenticationUserByEmail(@PathVariable String email);
+    UserDto getUserDtoByEmail(@PathVariable String email);
 }

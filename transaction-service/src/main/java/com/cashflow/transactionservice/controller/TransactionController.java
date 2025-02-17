@@ -4,9 +4,11 @@ import com.cashflow.transactionservice.dto.TransactionDto;
 import com.cashflow.transactionservice.model.Transaction;
 import com.cashflow.transactionservice.requests.CreateTransactionRequest;
 import com.cashflow.transactionservice.requests.TransactionUpdateRequest;
+import com.cashflow.transactionservice.service.SaltEdgeService;
 import com.cashflow.transactionservice.service.TransactionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
@@ -19,6 +21,11 @@ import java.util.List;
 public class TransactionController {
 
     private final TransactionService transactionService;
+
+    private final SaltEdgeService saltEdgeService;
+
+    @Value("${internal.key}")
+    private String internalKey;
 
     @PostMapping("/create")
     @ResponseStatus(HttpStatus.CREATED)
@@ -66,5 +73,33 @@ public class TransactionController {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
         transactionService.deleteTransactionById(transaction);
+    }
+
+    @DeleteMapping("/deleteAllTransactions")
+    @ResponseStatus(HttpStatus.OK)
+    public void deleteAllTransactions(@RequestParam Long userId) {
+        transactionService.deleteAllTransactionsByUserId(userId);
+    }
+
+    @PostMapping("/createConnectionSession")
+    @ResponseStatus(HttpStatus.OK)
+    public String createConnectionSession() {
+        return saltEdgeService.createConnectionSession();
+    }
+
+    @PostMapping("/fetchTransactions")
+    @ResponseStatus(HttpStatus.OK)
+    public void fetchAndSaveTransactions() {
+        saltEdgeService.synchronizeTransactions();
+    }
+
+    @DeleteMapping("/deleteSaltEdgeUser")
+    @ResponseStatus(HttpStatus.OK)
+    public void deleteSaltEdgeUser(@RequestHeader("Internal-Key") String key,
+                                   @RequestParam String customerId) {
+        if (!key.equals(internalKey)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
+        saltEdgeService.deleteSaltEdgeUser(customerId);
     }
 }
