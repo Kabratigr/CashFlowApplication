@@ -27,6 +27,8 @@ public class User {
     private UserRole role;
     @Enumerated(EnumType.STRING)
     private UserStatus status;
+    @Column(unique = true)
+    private String customerId;
     @Column(nullable = false, unique = true)
     private String email;
     @Column(nullable = false, unique = true)

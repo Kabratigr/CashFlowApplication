@@ -1,12 +1,10 @@
-package com.cashflow.userservice.dto;
+package com.cashflow.authenticationservice.dto;
 
-import com.cashflow.userservice.enums.UserRole;
-import lombok.Builder;
+import com.cashflow.authenticationservice.enums.UserRole;
 import lombok.Data;
 
 @Data
-@Builder
-public class AuthenticationUserDto {
+public class UserDto {
     private Long id;
     private UserRole userRole;
     private String email;
