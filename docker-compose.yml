@@ -1,0 +1,106 @@
+services:
+  eureka-server:
+    image: openjdk:21
+    container_name: eureka-server
+    ports:
+      - "8761:8761"
+    volumes:
+      - ./eureka-server/target/eureka-server-1.0-SNAPSHOT.jar:/app/eureka-server.jar
+    command: ["java", "-jar", "/app/eureka-server.jar"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8761/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    ports:
+      - "3307:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=1234
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api-gateway:
+    image: openjdk:21
+    container_name: api-gateway
+    ports:
+      - "8082:8082"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - JWT_SECRET=${JWT_SECRET}
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+    volumes:
+      - ./api-gateway/target/api-gateway-1.0-SNAPSHOT.jar:/app/api-gateway.jar
+    command: ["java", "-jar", "/app/api-gateway.jar"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8082/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  authentication-service:
+    image: openjdk:21
+    container_name: authentication-service
+    ports:
+      - "8081:8081"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - JWT_SECRET=${JWT_SECRET}
+      - INTERNAL_KEY=${INTERNAL_KEY}
+    depends_on:
+      api-gateway:
+        condition: service_healthy
+    volumes:
+      - ./authentication-service/target/authentication-service-1.0-SNAPSHOT.jar:/app/authentication-service.jar
+    command: ["java", "-jar", "/app/authentication-service.jar"]
+
+  transaction-service:
+    image: openjdk:21
+    container_name: transaction-service
+    ports:
+      - "8083:8083"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - JWT_SECRET=${JWT_SECRET}
+      - INTERNAL_KEY=${INTERNAL_KEY}
+      - SALTEDGE_ID=${SALTEDGE_ID}
+      - SALTEDGE_SECRET=${SALTEDGE_SECRET}
+    depends_on:
+      api-gateway:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+    volumes:
+      - ./transaction-service/target/transaction-service-1.0-SNAPSHOT.jar:/app/transaction-service.jar
+    command: ["java", "-jar", "/app/transaction-service.jar"]
+
+  user-service:
+    image: openjdk:21
+    container_name: user-service
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - JWT_SECRET=${JWT_SECRET}
+      - INTERNAL_KEY=${INTERNAL_KEY}
+    depends_on:
+      api-gateway:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+    volumes:
+      - ./user-service/target/user-service-1.0-SNAPSHOT.jar:/app/user-service.jar
+    command: ["java", "-jar", "/app/user-service.jar"]
+
+volumes:
+  mysql-data:
