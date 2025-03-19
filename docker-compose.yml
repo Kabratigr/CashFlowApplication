@@ -13,13 +13,66 @@ services:
       timeout: 5s
       retries: 5
 
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.1
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    volumes:
+      - zookeeper_data:/var/lib/zookeeper/data
+    healthcheck:
+      test: ["CMD-SHELL", "echo ruok | nc -w 2 localhost 2181"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  kafka:
+    image: confluentinc/cp-kafka:7.5.1
+    container_name: kafka
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD", "kafka-topics", "--bootstrap-server", "kafka:29092", "--list"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  kafka-management-service:
+    image: openjdk:21
+    container_name: kafka-management-service
+    ports:
+      - "8084:8084"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    depends_on:
+      kafka:
+        condition: service_healthy
+    volumes:
+      - ./kafka-management-service/target/kafka-management-service-1.0-SNAPSHOT.jar:/app/kafka-management-service.jar
+    command: ["java", "-jar", "/app/kafka-management-service.jar"]
+
   mysql:
     image: mysql:8.0
     container_name: mysql
     ports:
       - "3307:3306"
     environment:
-      - MYSQL_ROOT_PASSWORD=1234
+      MYSQL_ROOT_PASSWORD: 1234
     volumes:
       - mysql-data:/var/lib/mysql
     healthcheck:
@@ -34,8 +87,8 @@ services:
     ports:
       - "8082:8082"
     environment:
-      - SPRING_PROFILES_ACTIVE=docker
-      - JWT_SECRET=${JWT_SECRET}
+      SPRING_PROFILES_ACTIVE: docker
+      JWT_SECRET: ${JWT_SECRET}
     depends_on:
       eureka-server:
         condition: service_healthy
@@ -54,9 +107,9 @@ services:
     ports:
       - "8081:8081"
     environment:
-      - SPRING_PROFILES_ACTIVE=docker
-      - JWT_SECRET=${JWT_SECRET}
-      - INTERNAL_KEY=${INTERNAL_KEY}
+      SPRING_PROFILES_ACTIVE: docker
+      JWT_SECRET: ${JWT_SECRET}
+      INTERNAL_KEY: ${INTERNAL_KEY}
     depends_on:
       api-gateway:
         condition: service_healthy
@@ -70,14 +123,16 @@ services:
     ports:
       - "8083:8083"
     environment:
-      - SPRING_PROFILES_ACTIVE=docker
-      - JWT_SECRET=${JWT_SECRET}
-      - INTERNAL_KEY=${INTERNAL_KEY}
-      - SALTEDGE_ID=${SALTEDGE_ID}
-      - SALTEDGE_SECRET=${SALTEDGE_SECRET}
+      SPRING_PROFILES_ACTIVE: docker
+      JWT_SECRET: ${JWT_SECRET}
+      INTERNAL_KEY: ${INTERNAL_KEY}
+      SALTEDGE_ID: ${SALTEDGE_ID}
+      SALTEDGE_SECRET: ${SALTEDGE_SECRET}
     depends_on:
       api-gateway:
         condition: service_healthy
+      kafka-management-service:
+        condition: service_completed_successfully
       mysql:
         condition: service_healthy
     volumes:
@@ -90,12 +145,14 @@ services:
     ports:
       - "8080:8080"
     environment:
-      - SPRING_PROFILES_ACTIVE=docker
-      - JWT_SECRET=${JWT_SECRET}
-      - INTERNAL_KEY=${INTERNAL_KEY}
+      SPRING_PROFILES_ACTIVE: docker
+      JWT_SECRET: ${JWT_SECRET}
+      INTERNAL_KEY: ${INTERNAL_KEY}
     depends_on:
       api-gateway:
         condition: service_healthy
+      kafka-management-service:
+        condition: service_completed_successfully
       mysql:
         condition: service_healthy
     volumes:
@@ -103,4 +160,6 @@ services:
     command: ["java", "-jar", "/app/user-service.jar"]
 
 volumes:
+  zookeeper_data:
+  kafka_data:
   mysql-data:

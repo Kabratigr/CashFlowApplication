@@ -5,7 +5,6 @@ import com.cashflow.userservice.dto.UserDto;
 import com.cashflow.userservice.dto.UserProfileDto;
 import com.cashflow.userservice.model.User;
 import com.cashflow.userservice.requests.UserRegistrationRequest;
-import com.cashflow.userservice.requests.UserUpdateCustomerIdRequest;
 import com.cashflow.userservice.requests.UserUpdateProfileRequest;
 import com.cashflow.userservice.service.UserService;
 import jakarta.validation.Valid;
@@ -63,17 +62,6 @@ public class UserController {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
         userService.updateUserProfile(userUpdateProfileRequest, user);
-    }
-
-    @PutMapping("/updateCustomerId/{id}")
-    @ResponseStatus(HttpStatus.OK)
-    public void updateCustomerId(@PathVariable Long id,
-                                 @RequestBody UserUpdateCustomerIdRequest userUpdateCustomerIdRequest,
-                                 @RequestHeader("Internal-Key") String key) {
-        if (!key.equals(internalKey)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
-        }
-        userService.updateCustomerId(userUpdateCustomerIdRequest, id);
     }
 
     @GetMapping("/getCustomerId/{id}")
