@@ -31,8 +31,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String requestURI = request.getRequestURI();
         if (requestURI.startsWith("/v1/user-service/getUserByEmail/") ||
                 requestURI.startsWith("/v1/user-service/create") ||
-                requestURI.startsWith("/v1/user-service/getCustomerId") ||
-                requestURI.startsWith("/v1/user-service/updateCustomerId/")) {
+                requestURI.startsWith("/v1/user-service/getCustomerId")) {
             filterChain.doFilter(request, response);
             return;
         }

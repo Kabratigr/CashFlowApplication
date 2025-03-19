@@ -22,6 +22,7 @@
         <module>user-service</module>
         <module>authentication-service</module>
         <module>transaction-service</module>
+        <module>kafka-management-service</module>
     </modules>
 
     <properties>
@@ -66,5 +67,4 @@
             </plugin>
         </plugins>
     </build>
-
 </project>

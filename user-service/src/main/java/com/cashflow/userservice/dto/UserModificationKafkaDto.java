@@ -1,12 +1,15 @@
-package com.cashflow.transactionservice.requests;
+package com.cashflow.userservice.dto;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
+@Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class UserUpdateCustomerIdRequest {
+public class UserModificationKafkaDto {
+    private Long userId;
     private String customerId;
 }

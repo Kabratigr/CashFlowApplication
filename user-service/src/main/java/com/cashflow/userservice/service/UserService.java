@@ -1,6 +1,5 @@
 package com.cashflow.userservice.service;
 
-import com.cashflow.userservice.client.TransactionServiceClient;
 import com.cashflow.userservice.dto.UserCustomerIdDto;
 import com.cashflow.userservice.dto.UserDto;
 import com.cashflow.userservice.dto.UserProfileDto;
@@ -8,15 +7,15 @@ import com.cashflow.userservice.enums.UserRole;
 import com.cashflow.userservice.enums.UserStatus;
 import com.cashflow.userservice.exceptions.UserNotFoundException;
 import com.cashflow.userservice.model.User;
+import com.cashflow.userservice.kafka.UserServiceProducer;
 import com.cashflow.userservice.repository.UserRepository;
 import com.cashflow.userservice.requests.UserRegistrationRequest;
-import com.cashflow.userservice.requests.UserUpdateCustomerIdRequest;
+import com.cashflow.userservice.dto.UserModificationKafkaDto;
 import com.cashflow.userservice.requests.UserUpdateProfileRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
@@ -26,9 +25,9 @@ public class UserService {
 
     private final UserRepository userRepository;
 
-    private final PasswordEncoder passwordEncoder;
+    private final UserServiceProducer userServiceProducer;
 
-    private final TransactionServiceClient transactionServiceClient;
+    private final PasswordEncoder passwordEncoder;
 
     public void createUser(UserRegistrationRequest userRegistrationRequest) {
         User userToCreate = User.builder()
@@ -79,11 +78,11 @@ public class UserService {
         userRepository.save(userToUpdate);
     }
 
-    public void updateCustomerId (UserUpdateCustomerIdRequest userUpdateCustomerIdRequest, Long id) {
-        User userToUpdate = userRepository.findUserById(id)
+    public void updateCustomerId (UserModificationKafkaDto userModificationKafkaDto) {
+        User userToUpdate = userRepository.findUserById(userModificationKafkaDto.getUserId())
                 .orElseThrow(() -> new UserNotFoundException(
-                        String.format("User with id \"%s\" not found", id)));
-        userToUpdate.setCustomerId(userUpdateCustomerIdRequest.getCustomerId());
+                        String.format("User with id \"%s\" not found", userModificationKafkaDto.getUserId())));
+        userToUpdate.setCustomerId(userModificationKafkaDto.getCustomerId());
         userRepository.save(userToUpdate);
     }
 
@@ -99,12 +98,12 @@ public class UserService {
                 .build();
     }
 
-    @Transactional
     public void deleteUserById(User userToDelete) {
-        if (userToDelete.getCustomerId() != null && !userToDelete.getCustomerId().isEmpty()) {
-            transactionServiceClient.deleteSaltEdgeUser(userToDelete.getCustomerId());
-        }
-        transactionServiceClient.deleteAllTransactions(getCurrentUserId());
+        UserModificationKafkaDto userModificationKafkaDto = UserModificationKafkaDto.builder()
+                .userId(userToDelete.getId())
+                .customerId(userToDelete.getCustomerId())
+                .build();
+        userServiceProducer.sendUserDeletionEvent(userModificationKafkaDto);
         userRepository.delete(userToDelete);
     }
 

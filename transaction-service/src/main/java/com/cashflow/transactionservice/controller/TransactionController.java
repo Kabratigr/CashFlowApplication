@@ -8,7 +8,6 @@ import com.cashflow.transactionservice.service.SaltEdgeService;
 import com.cashflow.transactionservice.service.TransactionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
@@ -23,9 +22,6 @@ public class TransactionController {
     private final TransactionService transactionService;
 
     private final SaltEdgeService saltEdgeService;
-
-    @Value("${internal.key}")
-    private String internalKey;
 
     @PostMapping("/create")
     @ResponseStatus(HttpStatus.CREATED)
@@ -95,11 +91,7 @@ public class TransactionController {
 
     @DeleteMapping("/deleteSaltEdgeUser")
     @ResponseStatus(HttpStatus.OK)
-    public void deleteSaltEdgeUser(@RequestHeader("Internal-Key") String key,
-                                   @RequestParam String customerId) {
-        if (!key.equals(internalKey)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
-        }
+    public void deleteSaltEdgeUser(@RequestParam String customerId) {
         saltEdgeService.deleteSaltEdgeUser(customerId);
     }
 }
